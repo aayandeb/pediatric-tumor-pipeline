@@ -6,3 +6,5 @@ archive.zip
 *.npy
 __pycache__/
 .DS_Store
+scripts/download_data.py
+first_look.png
