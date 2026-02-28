@@ -1,0 +1,8 @@
+raw/
+processed/
+archive.zip
+*.tar
+*.nii.gz
+*.npy
+__pycache__/
+.DS_Store
