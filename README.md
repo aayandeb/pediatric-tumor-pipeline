@@ -1,111 +1,141 @@
-## Pediatric Brain Tumor MRI Pipeline
+# Pediatric Tumor Detection Pipeline
+> A deep learning pipeline for brain tumor segmentation, quantification, and explainability — built on BraTS 2021 data.
 
-This repository contains a small end‑to‑end preprocessing pipeline for **pediatric brain tumor MRI** volumes (BraTS‑style data with multi‑modal MR and segmentation masks).  
-It focuses on:
-- **Quick visual sanity checks** of raw NIfTI volumes.
-- **Standardized preprocessing** (z‑score normalization, axial slice cropping).
-- **Saving NumPy tensors** and a **train/val/test manifest** for downstream modeling.
+![Python](https://img.shields.io/badge/python-3.9-blue) ![PyTorch](https://img.shields.io/badge/framework-PyTorch-orange) ![Status](https://img.shields.io/badge/status-in%20progress-yellow)
 
-### Dataset assumptions
+---
 
-The code expects a BraTS‑like directory layout under `raw/`:
+## Overview
 
-- **Root directory**: `raw/`
-- **Per‑patient folder**: `raw/BraTS2021_XXXXX/`
-- **Files per patient**:
-  - `BraTS2021_XXXXX_t1.nii.gz`
-  - `BraTS2021_XXXXX_t1ce.nii.gz`
-  - `BraTS2021_XXXXX_t2.nii.gz`
-  - `BraTS2021_XXXXX_flair.nii.gz`
-  - `BraTS2021_XXXXX_seg.nii.gz`
+![BraTS 2021 Sample](images/first_look.png)
 
-You can either download BraTS 2021 manually and arrange it in this format, or adapt the (currently empty) `scripts/download_data.py` to automate it.
+This project builds an end-to-end AI pipeline that mimics clinical tumor analysis workflows used in hospital radiology departments. It takes raw brain MRI scans, segments tumor regions using a deep learning model, quantifies tumor properties, and explains model decisions visually.
 
-### Repository structure
+Built as a research demo to explore how explainable AI can support radiologist decision-making — directly motivated by work in quantitative imaging and trustworthy AI.
 
-- `scripts/explore_data.py` – load a single patient, print basic stats, and save a 2D montage (`first_look.png`) across modalities + segmentation.
-- `scripts/pipeline.py` – main preprocessing script:
-  - Z‑score normalization per modality (ignoring background zeros).
-  - Keep only the **middle 60% of axial slices** (removes mostly empty edges).
-  - Save stacked multi‑modal volumes and segmentation masks as `.npy`.
-  - Create a **70/15/15 train/val/test split** and persist it in `manifest.json`.
-- `scripts/download_data.py` – placeholder for data download logic.
-- `raw/` – expected location of unprocessed NIfTI volumes.
-- `processed/` – generated NumPy arrays after running the pipeline.
-- `first_look.png` – example visualization from `explore_data.py`.
+---
 
-### Installation
+## Dataset
 
-You will need Python 3 and a few scientific Python libraries. A minimal setup:
+**BraTS 2021** (Brain Tumor Segmentation Challenge)
+- 1,251 patients with glioblastoma and lower-grade glioma
+- 4 MRI modalities per patient: T1, T1ce (contrast-enhanced), T2, FLAIR
+- Expert-annotated tumor segmentation masks with 4 tumor sub-regions:
+  - 0: Background
+  - 1: Necrotic tumor core
+  - 2: Peritumoral edema
+  - 4: Enhancing tumor
+
+Each volume is 240×240×155 voxels in NIfTI format (.nii.gz).
+
+---
+
+## Project Structure
+
+```
+pediatric-tumor-pipeline/
+├── raw/                  # BraTS 2021 patient folders (not tracked in git)
+├── processed/            # Normalized .npy arrays (not tracked in git)
+├── scripts/
+│   ├── explore_data.py   # Visualize MRI modalities for a single patient
+│   └── pipeline.py       # Full data curation pipeline
+├── manifest.json         # Train/val/test split for all 1,251 patients
+└── README.md
+```
+
+---
+
+## Pipeline — Part 1: Data Curation
+
+**Script:** `scripts/pipeline.py`
+
+Real medical imaging data is messy and inconsistent. This pipeline handles:
+
+**Loading**
+- Reads all 4 MRI modalities + segmentation mask per patient using `nibabel`
+
+**Normalization**
+- Z-score normalization per modality, computed only over non-background voxels
+- Ensures consistent intensity scale across patients and MRI scanners
+- Formula: `(x - mean) / std` where mean/std are computed over brain tissue only
+
+**Slice Selection**
+- Keeps the middle 60% of axial slices (removes top/bottom edges which are mostly empty skull)
+- Reduces from 155 → 107 slices per patient
+
+**Train/Val/Test Split**
+- 70% train (875 patients), 15% val (188), 15% test (188)
+- Reproducible with `random_state=42`
+- Saved to `manifest.json`
+
+**Output per patient:**
+- `{patient_id}_data.npy` — shape `(4, 240, 240, 107)` — 4 normalized modalities
+- `{patient_id}_seg.npy`  — shape `(240, 240, 107)` — integer tumor mask
+
+---
+
+## Roadmap
+
+- [x] Data curation pipeline (normalization, slice filtering, split)
+- [x] Dataset manifest (JSON)
+- [ ] 2D U-Net segmentation model (PyTorch)
+- [ ] Dice coefficient validation
+- [ ] MC Dropout uncertainty estimation
+- [ ] Grad-CAM explainability overlays
+- [ ] Tumor quantification (volume mm³, bounding box, shape features)
+- [ ] Streamlit web app for radiologist-friendly visualization
+
+---
+
+## Quickstart
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # on macOS/Linux
-pip install nibabel numpy matplotlib tqdm scikit-learn
+# Clone the repo
+git clone https://github.com/aayandeb/pediatric-tumor-pipeline.git
+cd pediatric-tumor-pipeline
+
+# Install dependencies
+pip install nibabel matplotlib numpy scikit-learn tqdm
+
+# Visualize one patient (requires BraTS 2021 data in raw/)
+python3 scripts/explore_data.py
+
+# Run the full curation pipeline
+python3 scripts/pipeline.py
 ```
 
-### Quick data exploration
+---
 
-To visually inspect a single case and confirm paths are correct:
+## Key Design Decisions
 
-```bash
-python scripts/explore_data.py
-```
+**Why BraTS 2021?**
+It is the most widely cited benchmark dataset for brain tumor segmentation, used in hundreds of peer-reviewed papers. Pre-registered annotations from expert neuroradiologists make it clinically credible.
 
-This will:
-- Load `BraTS2021_00000` from `raw/` (see the script for the patient ID).
-- Print each modality’s shape and intensity range.
-- Save `first_look.png` at the project root with T1, T1ce, T2, FLAIR, and segmentation side‑by‑side.
+**Why Z-score normalization?**
+MRI intensities are not standardized across scanners or acquisition protocols — unlike CT where Hounsfield units are absolute. Z-score normalization over brain tissue (excluding background) is the standard approach in medical imaging literature.
 
-### Preprocessing pipeline
+**Why keep only the middle 60% of slices?**
+The top and bottom axial slices contain mostly skull and empty space with little diagnostic value. Removing them reduces data size and focuses the model on clinically relevant brain tissue.
 
-Run the main preprocessing script:
+---
 
-```bash
-python scripts/pipeline.py
-```
+## Dependencies
 
-What it does:
-- **Reads** all patient folders under `raw/` whose names start with `BraTS2021_`.
-- For each patient:
-  - Loads `t1`, `t1ce`, `t2`, `flair`, and `seg` volumes with `nibabel`.
-  - Applies **z‑score normalization** per modality over non‑zero voxels.
-  - Stacks modalities into a tensor of shape `(4, 240, 240, N_slices)` and keeps only the middle 60% of axial slices.
-  - Crops the segmentation volume to the same slice range.
-  - Saves:
-    - `processed/BraTS2021_XXXXX_data.npy` – float32 tensor of stacked modalities.
-    - `processed/BraTS2021_XXXXX_seg.npy` – uint8 segmentation labels.
-- After processing, it:
-  - Splits all patient IDs into **train/val/test = 70/15/15** using a fixed random seed.
-  - Writes a `manifest.json` file at the project root.
+| Package | Purpose |
+|---|---|
+| nibabel | Load NIfTI MRI files |
+| numpy | Array operations |
+| matplotlib | Visualization |
+| scikit-learn | Train/val/test splitting |
+| tqdm | Progress bars |
+| torch (coming) | U-Net model training |
 
-The manifest has the following structure:
+---
 
-```json
-{
-  "dataset": "BraTS2021",
-  "total_patients": <int>,
-  "modalities": ["t1", "t1ce", "t2", "flair"],
-  "split": {
-    "train": ["BraTS2021_XXXXX", "..."],
-    "val":   ["BraTS2021_YYYYY", "..."],
-    "test":  ["BraTS2021_ZZZZZ", "..."]
-  }
-}
-```
+## Motivation
 
-### Output shapes and normalization
+This project is inspired by clinical AI workflows in radiology departments, where quantitative imaging and explainable AI are increasingly critical for radiologist trust and adoption. The goal is to build something that reflects real hospital AI pipelines — not just a classification model, but a full system from raw data to interpretable output.
 
-- Each `_data.npy` file:
-  - Shape: `(4, 240, 240, N_mid_slices)`
-  - Channels (axis 0): `[t1, t1ce, t2, flair]`
-  - Intensities: approximately **zero mean, unit variance** where the original volume was non‑zero.
-- Each `_seg.npy` file:
-  - Shape: `(240, 240, N_mid_slices)`
-  - Integer labels (e.g. 0–4 for background and tumor subregions, following BraTS conventions).
+---
 
-### Next steps / ideas
-
-- Add unit tests for preprocessing and shape invariants.
-- Implement `scripts/download_data.py` to fetch and organize BraTS data.
-- Extend the pipeline to handle **pediatric‑specific cohorts**, class imbalance, or additional imaging modalities as needed.
+*Built by Aayan Pratim Deb — sophomore CS, independently exploring medical AI.*
