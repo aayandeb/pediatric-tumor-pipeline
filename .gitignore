@@ -1,9 +1,12 @@
 raw/
 processed/
+checkpoints/*.pth
 archive.zip
+twenty_patients.zip
 *.tar
 *.nii.gz
 *.npy
 __pycache__/
 .DS_Store
+.venv/
 scripts/download_data.py
