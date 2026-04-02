@@ -40,7 +40,13 @@ pediatric-tumor-pipeline/
 │   ├── explore_data.py   # Visualize MRI modalities for a single patient
 │   ├── pipeline.py       # Full data curation pipeline
 │   ├── train.py          # Train 2D U-Net segmentation model
-│   └── evaluate.py       # Evaluate checkpoints on train/val/test splits
+│   ├── evaluate.py       # Evaluate checkpoints on train/val/test splits
+│   ├── mc_dropout.py     # Slice-wise uncertainty via stochastic inference
+│   ├── gradcam.py        # Explainability heatmaps for selected slice
+│   ├── quantify.py       # Tumor quantification metrics export
+│   ├── core.py           # Shared dataset/model utilities
+│   └── inference_utils.py# Shared inference helpers
+├── streamlit_app.py      # Single-case interactive visualization app
 ├── experiments/          # Baseline run notes and reproducibility records
 ├── manifest.json         # Train/val/test split for all 1,251 patients
 └── README.md
@@ -83,10 +89,10 @@ Real medical imaging data is messy and inconsistent. This pipeline handles:
 - [x] Dataset manifest (JSON)
 - [x] 2D U-Net segmentation model (PyTorch)
 - [x] Dice coefficient validation
-- [ ] MC Dropout uncertainty estimation
-- [ ] Grad-CAM explainability overlays
-- [ ] Tumor quantification (volume mm³, bounding box, shape features)
-- [ ] Streamlit web app for radiologist-friendly visualization
+- [x] MC Dropout uncertainty estimation
+- [x] Grad-CAM explainability overlays
+- [x] Tumor quantification (volume mm³, bounding box, shape features)
+- [x] Streamlit web app for radiologist-friendly visualization
 
 ---
 
@@ -98,7 +104,7 @@ git clone https://github.com/aayandeb/pediatric-tumor-pipeline.git
 cd pediatric-tumor-pipeline
 
 # Install dependencies
-pip install nibabel matplotlib numpy scikit-learn tqdm
+pip install nibabel matplotlib numpy scikit-learn tqdm torch streamlit
 
 # Visualize one patient (requires BraTS 2021 data in raw/)
 python3 scripts/explore_data.py
@@ -111,6 +117,18 @@ python3 scripts/train.py
 
 # Evaluate a checkpoint on held-out test split
 python3 scripts/evaluate.py --split test --checkpoint checkpoints/unet_best.pth
+
+# MC Dropout uncertainty (one patient/slice)
+python3 scripts/mc_dropout.py --patient-id BraTS2021_00000 --slice-idx 53
+
+# Grad-CAM overlay (one patient/slice)
+python3 scripts/gradcam.py --patient-id BraTS2021_00000 --slice-idx 53
+
+# Quantification report on test split
+python3 scripts/quantify.py --split test
+
+# Streamlit explorer
+streamlit run streamlit_app.py
 ```
 
 ---
@@ -138,6 +156,7 @@ The top and bottom axial slices contain mostly skull and empty space with little
 | scikit-learn | Train/val/test splitting |
 | tqdm | Progress bars |
 | torch | U-Net model training + evaluation |
+| streamlit | Interactive single-case visualization |
 
 ---
 
@@ -146,6 +165,7 @@ The top and bottom axial slices contain mostly skull and empty space with little
 Latest synced baseline details (artifact hashes, metrics, and qualitative notes) are logged in:
 
 - `experiments/baseline_2026-04-02.md`
+- `experiments/roadmap_mvp_2026-04-02.md`
 
 Use this file as the source of truth when comparing future experiments.
 

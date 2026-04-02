@@ -1,0 +1,45 @@
+[
+  {
+    "patient_id": "BraTS2021_00000",
+    "prediction": {
+      "voxel_count": 57171,
+      "volume_mm3": 57171.0,
+      "positive_slices": 40,
+      "mean_slice_area_px": 534.3084112149533,
+      "extent": 0.33933404558404556,
+      "bbox": {
+        "x_min": 111,
+        "y_min": 44,
+        "z_min": 3,
+        "x_max": 164,
+        "y_max": 121,
+        "z_max": 42
+      },
+      "spacing_mm": {
+        "x": 1.0,
+        "y": 1.0,
+        "z": 1.0
+      }
+    },
+    "ground_truth": {
+      "voxel_count": 57305,
+      "volume_mm3": 57305.0,
+      "positive_slices": 47,
+      "mean_slice_area_px": 535.5607476635514,
+      "extent": 0.34875724231948974,
+      "bbox": {
+        "x_min": 118,
+        "y_min": 45,
+        "z_min": 1,
+        "x_max": 163,
+        "y_max": 120,
+        "z_max": 47
+      },
+      "spacing_mm": {
+        "x": 1.0,
+        "y": 1.0,
+        "z": 1.0
+      }
+    }
+  }
+]

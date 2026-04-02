@@ -1,0 +1,2 @@
+patient_id,pred_voxel_count,pred_volume_mm3,pred_positive_slices,pred_mean_slice_area_px,pred_extent,gt_voxel_count,gt_volume_mm3,gt_positive_slices,gt_mean_slice_area_px,gt_extent
+BraTS2021_00000,57171,57171.0,40,534.3084112149533,0.33933404558404556,57305,57305.0,47,535.5607476635514,0.34875724231948974
