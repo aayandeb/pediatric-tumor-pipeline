@@ -38,7 +38,10 @@ pediatric-tumor-pipeline/
 ├── processed/            # Normalized .npy arrays (not tracked in git)
 ├── scripts/
 │   ├── explore_data.py   # Visualize MRI modalities for a single patient
-│   └── pipeline.py       # Full data curation pipeline
+│   ├── pipeline.py       # Full data curation pipeline
+│   ├── train.py          # Train 2D U-Net segmentation model
+│   └── evaluate.py       # Evaluate checkpoints on train/val/test splits
+├── experiments/          # Baseline run notes and reproducibility records
 ├── manifest.json         # Train/val/test split for all 1,251 patients
 └── README.md
 ```
@@ -78,8 +81,8 @@ Real medical imaging data is messy and inconsistent. This pipeline handles:
 
 - [x] Data curation pipeline (normalization, slice filtering, split)
 - [x] Dataset manifest (JSON)
-- [ ] 2D U-Net segmentation model (PyTorch)
-- [ ] Dice coefficient validation
+- [x] 2D U-Net segmentation model (PyTorch)
+- [x] Dice coefficient validation
 - [ ] MC Dropout uncertainty estimation
 - [ ] Grad-CAM explainability overlays
 - [ ] Tumor quantification (volume mm³, bounding box, shape features)
@@ -102,6 +105,12 @@ python3 scripts/explore_data.py
 
 # Run the full curation pipeline
 python3 scripts/pipeline.py
+
+# Train U-Net
+python3 scripts/train.py
+
+# Evaluate a checkpoint on held-out test split
+python3 scripts/evaluate.py --split test --checkpoint checkpoints/unet_best.pth
 ```
 
 ---
@@ -128,7 +137,17 @@ The top and bottom axial slices contain mostly skull and empty space with little
 | matplotlib | Visualization |
 | scikit-learn | Train/val/test splitting |
 | tqdm | Progress bars |
-| torch (coming) | U-Net model training |
+| torch | U-Net model training + evaluation |
+
+---
+
+## Baseline Experiment Record
+
+Latest synced baseline details (artifact hashes, metrics, and qualitative notes) are logged in:
+
+- `experiments/baseline_2026-04-02.md`
+
+Use this file as the source of truth when comparing future experiments.
 
 ---
 
